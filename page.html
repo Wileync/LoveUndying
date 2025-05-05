@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flappy Bird Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #70c5ce;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #70c5ce;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="320" height="480"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// Game variables
+let frames = 0;
+const gravity = 0.25;
+const jump = 4.6;
+let score = 0;
+
+// Bird
+const bird = {
+  x: 50,
+  y: 150,
+  w: 30,
+  h: 30,
+  velocity: 0,
+  draw() {
+    ctx.fillStyle = "yellow";
+    ctx.fillRect(this.x, this.y, this.w, this.h);
+  },
+  flap() {
+    this.velocity = -jump;
+  },
+  update() {
+    this.velocity += gravity;
+    this.y += this.velocity;
+
+    if (this.y + this.h > canvas.height) {
+      this.y = canvas.height - this.h;
+      gameOver();
+    }
+  }
+};
+
+// Pipes
+let pipes = [];
+function createPipe() {
+  const gap = 100;
+  const top = Math.random() * (canvas.height - gap - 100) + 20;
+  pipes.push({
+    x: canvas.width,
+    topY: top,
+    bottomY: top + gap,
+    w: 50
+  });
+}
+setInterval(createPipe, 1500);
+
+// Game loop
+function update() {
+  frames++;
+  bird.update();
+
+  // Move and draw pipes
+  for (let i = 0; i < pipes.length; i++) {
+    const p = pipes[i];
+    p.x -= 2;
+
+    // Collision
+    if (
+      bird.x < p.x + p.w &&
+      bird.x + bird.w > p.x &&
+      (bird.y < p.topY || bird.y + bird.h > p.bottomY)
+    ) {
+      gameOver();
+    }
+
+    // Score
+    if (p.x + p.w < bird.x && !p.passed) {
+      score++;
+      p.passed = true;
+    }
+  }
+
+  // Remove off-screen pipes
+  pipes = pipes.filter(p => p.x + p.w > 0);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  bird.draw();
+
+  // Draw pipes
+  ctx.fillStyle = "green";
+  for (let p of pipes) {
+    ctx.fillRect(p.x, 0, p.w, p.topY);
+    ctx.fillRect(p.x, p.bottomY, p.w, canvas.height - p.bottomY);
+  }
+
+  // Score
+  ctx.fillStyle = "#fff";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 10, 25);
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function gameOver() {
+  alert("Game Over! Score: " + score);
+  location.reload();
+}
+
+// Controls
+document.addEventListener("keydown", e => {
+  if (e.code === "Space") bird.flap();
+});
+document.addEventListener("mousedown", () => bird.flap());
+
+// Start game
+loop();
+</script>
+</body>
+</html>
